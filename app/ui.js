@@ -15,6 +15,7 @@ import KeyTable from "../core/input/keysym.js";
 import keysyms from "../core/input/keysymdef.js";
 import Keyboard from "../core/input/keyboard.js";
 import RFB from "../core/rfb.js";
+import WebAudio from "../core/webaudio.js";
 import * as WebUtil from "./webutil.js";
 
 const PAGE_TITLE = "noVNC";
@@ -40,6 +41,7 @@ const UI = {
     inhibitReconnect: true,
     reconnectCallback: null,
     reconnectPassword: null,
+    webAudio: null,
 
     prime() {
         return WebUtil.initSettings().then(() => {
@@ -176,6 +178,7 @@ const UI = {
         UI.initSetting('repeaterID', '');
         UI.initSetting('reconnect', false);
         UI.initSetting('reconnect_delay', 5000);
+        UI.initSetting('apath', '');
 
         UI.setupSettingLabels();
     },
@@ -361,6 +364,7 @@ const UI = {
         UI.addSettingChangeHandler('host');
         UI.addSettingChangeHandler('port');
         UI.addSettingChangeHandler('path');
+        UI.addSettingChangeHandler('apath');
         UI.addSettingChangeHandler('repeaterID');
         UI.addSettingChangeHandler('logging');
         UI.addSettingChangeHandler('logging', UI.updateLogging);
@@ -427,6 +431,7 @@ const UI = {
             UI.disableSetting('host');
             UI.disableSetting('port');
             UI.disableSetting('path');
+            UI.disableSetting('apath');
             UI.disableSetting('repeaterID');
 
             // Hide the controlbar after 2 seconds
@@ -437,6 +442,7 @@ const UI = {
             UI.enableSetting('host');
             UI.enableSetting('port');
             UI.enableSetting('path');
+            UI.enableSetting('apath');
             UI.enableSetting('repeaterID');
             UI.updatePowerButton();
             UI.keepControlbar();
@@ -842,6 +848,7 @@ const UI = {
         UI.updateSetting('shared');
         UI.updateSetting('view_only');
         UI.updateSetting('path');
+        UI.updateSetting('apath');
         UI.updateSetting('repeaterID');
         UI.updateSetting('logging');
         UI.updateSetting('reconnect');
@@ -1056,6 +1063,10 @@ const UI = {
 
         UI.updateVisualState('disconnecting');
 
+        if(UI.webaudio !== null && UI.webaudio.socket !== null) {
+            UI.webaudio.socket.close();
+        }
+
         // Don't display the connection settings until we're actually disconnected
     },
 
@@ -1097,6 +1108,26 @@ const UI = {
 
         // Do this last because it can only be used on rendered elements
         UI.rfb.focus();
+
+        const apath = UI.getSetting('apath');
+
+        if(apath != "") {
+            const host = UI.getSetting('host');
+            const port = UI.getSetting('port');
+
+            let url = UI.getSetting('encrypt') ? 'wss' : 'ws';
+
+            url += '://' + host;
+            if (port) {
+                url += ':' + port;
+            }
+
+            url += '/' + apath;
+
+            UI.webaudio = new WebAudio(url);
+            document.getElementsByTagName('canvas')[0].addEventListener('keydown', e => { UI.webaudio.start(); });
+        }
+
     },
 
     disconnectFinished(e) {
