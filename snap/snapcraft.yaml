@@ -1,6 +1,6 @@
 name: novnc
-base: core18 # the base snap is the execution environment for this snap
-version: '@VERSION@'
+base: core22 # the base snap is the execution environment for this snap
+version: git
 summary: Open Source VNC client using HTML5 (WebSockets, Canvas)
 description: |
   Open Source VNC client using HTML5 (WebSockets, Canvas).
@@ -16,13 +16,16 @@ parts:
         source: .
         plugin: dump
         organize:
-            utils/launch.sh: /
+            utils/novnc_proxy: /
         stage:
             - vnc.html
             - app
             - core/**/*.js
             - vendor/**/*.js
-            - launch.sh
+            - novnc_proxy
+
+    novnc-deps:
+        plugin: nil
         stage-packages:
             - bash
 
@@ -31,12 +34,15 @@ parts:
         plugin: dump
         stage:
             - svc_wrapper.sh
+
+    svc-script-deps:
+        plugin: nil
         stage-packages:
             - bash
             - jq
 
     websockify:
-        source: https://github.com/novnc/websockify/archive/v0.9.0.tar.gz
+        source: https://github.com/novnc/websockify/archive/v0.12.0.tar.gz
         plugin: python
         stage-packages:
             - python3-numpy
@@ -47,7 +53,7 @@ hooks:
 
 apps:
     novnc:
-        command: ./launch.sh
+        command: ./novnc_proxy
         plugs: [network, network-bind]
     novncsvc:
         command: ./svc_wrapper.sh

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 const path = require('path');
-const program = require('commander');
+const { program } = require('commander');
 const fs = require('fs');
 const fse = require('fs-extra');
 const babel = require('@babel/core');
@@ -130,9 +130,11 @@ function makeLibFiles(sourceMaps) {
         });
 }
 
-if (program.clean) {
+let options = program.opts();
+
+if (options.clean) {
     console.log(`Removing ${paths.libDirBase}`);
     fse.removeSync(paths.libDirBase);
 }
 
-makeLibFiles(program.withSourceMaps);
+makeLibFiles(options.withSourceMaps);
